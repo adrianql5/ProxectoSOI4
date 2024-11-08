@@ -3,50 +3,37 @@
 #include <pthread.h>
 #include <unistd.h>
 
-void* thread_function(void* arg) {
-    int thread_num = *(int*)arg;
-    printf("Hilo %d: Iniciando\n", thread_num);
 
-    sleep(1);
+//watch -n 0.5 'ps -eLf | grep <nombre-ejecutable>'
 
-    printf("Hilo %d: Terminando\n", thread_num);
-    return NULL;
+void *funcionPthExit(void *arg) {
+    int n = *(int *)arg;
+    printf("Hilo %d creado\n", n);
+    sleep(20);
+    printf("Mensaje que no debería aparecer\n");
+    pthread_exit(NULL);
 }
 
-void* exit_thread_function(void* arg) {
-    printf("Hilo de salida: Iniciando\n");
-
-    sleep(2);
-
-    printf("Hilo de salida: Llamando a exit\n");
-    exit(0);
-    return NULL;
+void *funcionExit(void *arg) {
+    int n = *(int *)arg;
+    printf("Hilo %d creado\n", n);
+    sleep(1);
+    printf("El hilo %d va a terminar el proceso\n", n);
+    exit(1);
 }
 
 int main() {
-    pthread_t threads[3];
-    int thread_args[3];
+    pthread_t hilos[3];
+    int i = 1, j = 2, z = 3;
 
-    for (int i = 0; i < 3; i++) {
-        thread_args[i] = i + 1;
-        if (pthread_create(&threads[i], NULL, thread_function, &thread_args[i]) != 0) {
-            perror("Error creando hilo");
-            exit(1);
-        }
+    pthread_create(&hilos[0], NULL, funcionPthExit, &i);
+    pthread_create(&hilos[1], NULL, funcionPthExit, &j);
+    pthread_create(&hilos[2], NULL, funcionExit, &z);
+
+    // Esperar a que los hilos terminen para evitar que el proceso termine antes
+    for (int k = 0; k < 3; k++) {
+        pthread_join(hilos[k], NULL);
     }
-
-
-    pthread_t exit_thread;
-    if (pthread_create(&exit_thread, NULL, exit_thread_function, NULL) != 0) {
-        perror("Error creando hilo de salida");
-        exit(1);
-    }
-
-    for (int i = 0; i < 3; i++) {
-        pthread_join(threads[i], NULL);
-    }
-
-    pthread_join(exit_thread, NULL);
 
     return 0;
 }
